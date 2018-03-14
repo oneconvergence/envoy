@@ -60,6 +60,8 @@ public:
   bool initializeReadFilters() override;
 
   // Network::Connection
+  const ConnectionSocketPtr& getSocket() const override { return socket_; }
+
   void addConnectionCallbacks(ConnectionCallbacks& cb) override;
   void addBytesSentCallback(BytesSentCb cb) override;
   void enableHalfClose(bool enabled) override;
@@ -178,6 +180,12 @@ public:
                        const Address::InstanceConstSharedPtr& source_address,
                        Network::TransportSocketPtr&& transport_socket,
                        const Network::ConnectionSocket::OptionsSharedPtr& options);
+  ClientConnectionImpl(Event::Dispatcher& dispatcher,
+                       const Address::InstanceConstSharedPtr& remote_address,
+                       const Address::InstanceConstSharedPtr& source_address,
+                       Network::TransportSocketPtr&& transport_socket,
+                       const Network::ConnectionSocket::OptionsSharedPtr& options,
+                       const Network::Connection& oldconnection);
 
   // Network::ClientConnection
   void connect() override;

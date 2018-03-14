@@ -9,6 +9,7 @@
 #include "envoy/event/deferred_deletable.h"
 #include "envoy/event/dispatcher.h"
 #include "envoy/network/connection_handler.h"
+#include "envoy/network/connection.h"
 
 #include "common/common/logger.h"
 #include "common/common/thread.h"
@@ -41,6 +42,12 @@ public:
                          Network::Address::InstanceConstSharedPtr source_address,
                          Network::TransportSocketPtr&& transport_socket,
                          const Network::ConnectionSocket::OptionsSharedPtr& options) override;
+  Network::ClientConnectionPtr
+  createClientConnection(Network::Address::InstanceConstSharedPtr address,
+                         Network::Address::InstanceConstSharedPtr source_address,
+                         Network::TransportSocketPtr&& transport_socket,
+                         const Network::ConnectionSocket::OptionsSharedPtr& options,
+                         const Network::Connection& oldconnection) override;
   Network::DnsResolverSharedPtr createDnsResolver(
       const std::vector<Network::Address::InstanceConstSharedPtr>& resolvers) override;
   FileEventPtr createFileEvent(int fd, FileReadyCb cb, FileTriggerType trigger,

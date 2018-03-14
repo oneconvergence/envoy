@@ -11,6 +11,13 @@ Network::ClientConnectionPtr ValidationDispatcher::createClientConnection(
   NOT_IMPLEMENTED;
 }
 
+Network::ClientConnectionPtr ValidationDispatcher::createClientConnection(
+    Network::Address::InstanceConstSharedPtr, Network::Address::InstanceConstSharedPtr,
+    Network::TransportSocketPtr&&, const Network::ConnectionSocket::OptionsSharedPtr&,
+    const Network::Connection&) {
+  NOT_IMPLEMENTED;
+}
+
 Network::DnsResolverSharedPtr ValidationDispatcher::createDnsResolver(
     const std::vector<Network::Address::InstanceConstSharedPtr>&) {
   NOT_IMPLEMENTED;

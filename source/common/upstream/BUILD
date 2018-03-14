@@ -168,6 +168,7 @@ envoy_cc_library(
     deps = [
         ":upstream_includes",
         "//include/envoy/thread_local:thread_local_interface",
+        "//include/envoy/network:connection_interface",
         "//source/common/common:empty_string",
         "//source/common/config:utility_lib",
         "//source/common/network:address_lib",

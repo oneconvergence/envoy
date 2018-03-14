@@ -564,8 +564,47 @@ ClientConnectionImpl::ClientConnectionImpl(
   }
 }
 
+ClientConnectionImpl::ClientConnectionImpl(
+    Event::Dispatcher& dispatcher, const Address::InstanceConstSharedPtr& remote_address,
+    const Network::Address::InstanceConstSharedPtr& source_address,
+    Network::TransportSocketPtr&& transport_socket,
+    const Network::ConnectionSocket::OptionsSharedPtr& options,
+    const Network::Connection& oldconnection)
+    : ConnectionImpl(dispatcher, std::move(const_cast<ConnectionSocketPtr&>(oldconnection.getSocket())),
+      std::move(transport_socket), true) {
+  std::ignore = remote_address;
+  if (options) {
+    if (!options->setOptions(*socket_)) {
+      // Set a special error state to ensure asynchronous close to give the owner of the
+      // ConnectionImpl a chance to add callbacks and detect the "disconnect".
+      immediate_error_event_ = ConnectionEvent::LocalClose;
+      // Trigger a write event to close this connection out-of-band.
+      file_event_->activate(Event::FileReadyType::Write);
+      return;
+    }
+  }
+  if (source_address != nullptr) {
+    const int rc = source_address->bind(fd());
+    if (rc < 0) {
+      ENVOY_LOG_MISC(debug, "Bind failure. Failed to bind to {}: {}", source_address->asString(),
+                     strerror(errno));
+      bind_error_ = true;
+      // Set a special error state to ensure asynchronous close to give the owner of the
+      // ConnectionImpl a chance to add callbacks and detect the "disconnect".
+      immediate_error_event_ = ConnectionEvent::LocalClose;
+
+      // Trigger a write event to close this connection out-of-band.
+      file_event_->activate(Event::FileReadyType::Write);
+    }
+  }
+}
+
 void ClientConnectionImpl::connect() {
   ENVOY_CONN_LOG(debug, "connecting to {}", *this, socket_->remoteAddress()->asString());
+  if ((socket_->localAddress() != nullptr) && (!(socket_->localAddress()->asString()).empty())){
+      ENVOY_CONN_LOG(debug, "Already connected to {} !!!", *this, socket_->remoteAddress()->asString());
+      return;
+  }
   const int rc = socket_->remoteAddress()->connect(fd());
   if (rc == 0) {
     // write will become ready.

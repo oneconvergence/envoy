@@ -55,6 +55,7 @@ envoy_cc_library(
     hdrs = ["dispatcher.h"],
     deps = [
         "//include/envoy/event:dispatcher_interface",
+        "//include/envoy/network:connection_interface",
         "//source/common/common:assert_lib",
         "//source/common/event:dispatcher_lib",
     ],

@@ -25,6 +25,7 @@ envoy_cc_library(
         ":dispatcher_includes",
         "//include/envoy/event:signal_interface",
         "//include/envoy/event:timer_interface",
+        "//include/envoy/network:connection_interface",
         "//include/envoy/network:listen_socket_interface",
         "//include/envoy/network:listener_interface",
         "//source/common/common:assert_lib",

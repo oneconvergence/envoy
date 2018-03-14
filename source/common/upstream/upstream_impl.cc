@@ -55,6 +55,13 @@ HostImpl::createConnection(Event::Dispatcher& dispatcher,
   return {createConnection(dispatcher, *cluster_, address_, options), shared_from_this()};
 }
 
+Host::CreateConnectionData
+HostImpl::createConnection(Event::Dispatcher& dispatcher,
+                           const Network::ConnectionSocket::OptionsSharedPtr& options,
+                           const Network::Connection& oldconnection) const {
+  return {createConnection(dispatcher, *cluster_, address_, options, oldconnection), shared_from_this()};
+}
+
 Network::ClientConnectionPtr
 HostImpl::createConnection(Event::Dispatcher& dispatcher, const ClusterInfo& cluster,
                            Network::Address::InstanceConstSharedPtr address,
@@ -65,6 +72,19 @@ HostImpl::createConnection(Event::Dispatcher& dispatcher, const ClusterInfo& clu
   connection->setBufferLimits(cluster.perConnectionBufferLimitBytes());
   return connection;
 }
+
+Network::ClientConnectionPtr
+HostImpl::createConnection(Event::Dispatcher& dispatcher, const ClusterInfo& cluster,
+                           Network::Address::InstanceConstSharedPtr address,
+                           const Network::ConnectionSocket::OptionsSharedPtr& options,
+                           const Network::Connection& oldconnection) {
+  Network::ClientConnectionPtr connection = dispatcher.createClientConnection(
+      address, cluster.sourceAddress(), cluster.transportSocketFactory().createTransportSocket(),
+      options, oldconnection);
+  connection->setBufferLimits(cluster.perConnectionBufferLimitBytes());
+  return connection;
+}
+
 
 void HostImpl::weight(uint32_t new_weight) { weight_ = std::max(1U, std::min(128U, new_weight)); }
 

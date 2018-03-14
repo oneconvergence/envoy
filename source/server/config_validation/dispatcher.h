@@ -2,6 +2,8 @@
 
 #include "envoy/event/dispatcher.h"
 
+#include "envoy/network/connection.h"
+
 #include "common/event/dispatcher_impl.h"
 
 namespace Envoy {
@@ -18,6 +20,11 @@ public:
   createClientConnection(Network::Address::InstanceConstSharedPtr,
                          Network::Address::InstanceConstSharedPtr, Network::TransportSocketPtr&&,
                          const Network::ConnectionSocket::OptionsSharedPtr& options) override;
+  Network::ClientConnectionPtr
+  createClientConnection(Network::Address::InstanceConstSharedPtr,
+                         Network::Address::InstanceConstSharedPtr, Network::TransportSocketPtr&&,
+                         const Network::ConnectionSocket::OptionsSharedPtr& options,
+                         const Network::Connection& oldconnection) override;
   Network::DnsResolverSharedPtr createDnsResolver(
       const std::vector<Network::Address::InstanceConstSharedPtr>& resolvers) override;
   Network::ListenerPtr createListener(Network::Socket&, Network::ListenerCallbacks&,

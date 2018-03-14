@@ -60,6 +60,11 @@ public:
   createConnection(Event::Dispatcher& dispatcher,
                    const Network::ConnectionSocket::OptionsSharedPtr& options) const PURE;
 
+  virtual CreateConnectionData
+  createConnection(Event::Dispatcher& dispatcher,
+                   const Network::ConnectionSocket::OptionsSharedPtr& options,
+                   const Network::Connection& oldconnection) const PURE;
+
   /**
    * @return host specific gauges.
    */

@@ -230,6 +230,11 @@ public:
   virtual bool aboveHighWatermark() const PURE;
 
   /**
+  * @return ConnectionSocketPtr i.e connection's socket
+  */
+  virtual const ConnectionSocketPtr& getSocket() const PURE;
+
+  /**
    * Get the socket options set on this connection.
    */
   virtual const ConnectionSocket::OptionsSharedPtr& socketOptions() const PURE;

@@ -109,6 +109,7 @@ public:
    *                      should be done by resetting the stream.
    */
   virtual Cancellable* newStream(Http::StreamDecoder& response_decoder, Callbacks& callbacks) PURE;
+  virtual void reuseConnection(const Network::Connection& oldconnection) PURE;
 };
 
 typedef std::unique_ptr<Instance> InstancePtr;

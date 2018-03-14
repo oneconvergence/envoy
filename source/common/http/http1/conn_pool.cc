@@ -13,6 +13,7 @@
 #include "common/http/codec_client.h"
 #include "common/http/codes.h"
 #include "common/http/headers.h"
+#include "common/network/connection_impl.h"
 #include "common/network/utility.h"
 #include "common/upstream/upstream_impl.h"
 
@@ -69,8 +70,13 @@ void ConnPoolImpl::checkForDrained() {
   }
 }
 
+void ConnPoolImpl::reuseConnection(const Network::Connection& oldconnection) {
+  ENVOY_LOG(debug, "reusing connection");
+  ActiveClientPtr client(new ActiveClient(*this, oldconnection));
+  client->moveIntoList(std::move(client), ready_clients_);
+}
+
 void ConnPoolImpl::createNewConnection() {
-  ENVOY_LOG(debug, "creating a new connection");
   ActiveClientPtr client(new ActiveClient(*this));
   client->moveIntoList(std::move(client), busy_clients_);
 }
@@ -276,6 +282,40 @@ ConnPoolImpl::PendingRequest::PendingRequest(ConnPoolImpl& parent, StreamDecoder
 ConnPoolImpl::PendingRequest::~PendingRequest() {
   parent_.host_->cluster().stats().upstream_rq_pending_active_.dec();
   parent_.host_->cluster().resourceManager(parent_.priority_).pendingRequests().dec();
+}
+
+//mk_change
+ConnPoolImpl::ActiveClient::ActiveClient(ConnPoolImpl& parent, const Network::Connection& oldconnection)
+    : parent_(parent),
+      connect_timer_(parent_.dispatcher_.createTimer([this]() -> void { onConnectTimeout(); })),
+      remaining_requests_(parent_.host_->cluster().maxRequestsPerConnection()) {
+
+  ENVOY_LOG(debug, "In ActiveClient");
+  parent_.conn_connect_ms_.reset(
+      new Stats::Timespan(parent_.host_->cluster().stats().upstream_cx_connect_ms_));
+  ENVOY_LOG(debug, "Before Upstream createConnection:");
+  Upstream::Host::CreateConnectionData data =
+      parent_.host_->createConnection(parent_.dispatcher_, parent_.socket_options_, oldconnection);
+  ENVOY_LOG(debug, "After Upstream createConnection");
+  real_host_description_ = data.host_description_;
+  codec_client_ = parent_.createCodecClient(data);
+  codec_client_->addConnectionCallbacks(*this);
+
+  parent_.host_->cluster().stats().upstream_cx_total_.inc();
+  parent_.host_->cluster().stats().upstream_cx_active_.inc();
+  parent_.host_->cluster().stats().upstream_cx_http1_total_.inc();
+  parent_.host_->stats().cx_total_.inc();
+  parent_.host_->stats().cx_active_.inc();
+  conn_length_.reset(new Stats::Timespan(parent_.host_->cluster().stats().upstream_cx_length_ms_));
+  connect_timer_->enableTimer(parent_.host_->cluster().connectTimeout());
+  parent_.host_->cluster().resourceManager(parent_.priority_).connections().inc();
+
+  codec_client_->setConnectionStats(
+      {parent_.host_->cluster().stats().upstream_cx_rx_bytes_total_,
+       parent_.host_->cluster().stats().upstream_cx_rx_bytes_buffered_,
+       parent_.host_->cluster().stats().upstream_cx_tx_bytes_total_,
+       parent_.host_->cluster().stats().upstream_cx_tx_bytes_buffered_,
+       &parent_.host_->cluster().stats().bind_errors_});
 }
 
 ConnPoolImpl::ActiveClient::ActiveClient(ConnPoolImpl& parent)

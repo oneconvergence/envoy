@@ -138,6 +138,11 @@ public:
   CreateConnectionData
   createConnection(Event::Dispatcher& dispatcher,
                    const Network::ConnectionSocket::OptionsSharedPtr& options) const override;
+
+  CreateConnectionData
+  createConnection(Event::Dispatcher& dispatcher,
+                   const Network::ConnectionSocket::OptionsSharedPtr& options,
+                   const Network::Connection& oldconnection) const override;
   std::list<Stats::GaugeSharedPtr> gauges() const override { return stats_store_.gauges(); }
   void healthFlagClear(HealthFlag flag) override { health_flags_ &= ~enumToInt(flag); }
   bool healthFlagGet(HealthFlag flag) const override { return health_flags_ & enumToInt(flag); }
@@ -159,6 +164,12 @@ protected:
   createConnection(Event::Dispatcher& dispatcher, const ClusterInfo& cluster,
                    Network::Address::InstanceConstSharedPtr address,
                    const Network::ConnectionSocket::OptionsSharedPtr& options);
+  // mk_change
+  static Network::ClientConnectionPtr
+  createConnection(Event::Dispatcher& dispatcher, const ClusterInfo& cluster,
+                   Network::Address::InstanceConstSharedPtr address,
+                   const Network::ConnectionSocket::OptionsSharedPtr& options,
+                   const Network::Connection& oldconnection);
 
 private:
   std::atomic<uint64_t> health_flags_{};

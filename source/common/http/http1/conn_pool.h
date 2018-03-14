@@ -77,6 +77,7 @@ protected:
                         public Network::ConnectionCallbacks,
                         public Event::DeferredDeletable {
     ActiveClient(ConnPoolImpl& parent);
+    ActiveClient(ConnPoolImpl& parent, const Network::Connection& oldconnection);
     ~ActiveClient();
 
     void onConnectTimeout();
@@ -119,6 +120,8 @@ protected:
   virtual CodecClientPtr createCodecClient(Upstream::Host::CreateConnectionData& data) PURE;
   void checkForDrained();
   void createNewConnection();
+  // mk_change
+  void reuseConnection(const Network::Connection& oldconnection);
   void onConnectionEvent(ActiveClient& client, Network::ConnectionEvent event);
   void onDownstreamReset(ActiveClient& client);
   void onPendingRequestCancel(PendingRequest& request);

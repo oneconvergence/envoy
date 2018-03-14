@@ -81,6 +81,7 @@ protected:
   void onGoAway(ActiveClient& client);
   void onStreamDestroy(ActiveClient& client);
   void onStreamReset(ActiveClient& client, Http::StreamResetReason reason);
+  void reuseConnection(const Network::Connection& oldconnection) { std::ignore = oldconnection; }
 
   Stats::TimespanPtr conn_connect_ms_;
   Event::Dispatcher& dispatcher_;
