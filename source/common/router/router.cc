@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdint>
 #include <string>
+#include <thread>
 
 #include "envoy/event/dispatcher.h"
 #include "envoy/event/timer.h"
@@ -308,6 +309,12 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::HeaderMap& headers, bool e
   ASSERT(headers.Host());
   ASSERT(headers.Path());
 
+  if (std::strstr(headers.Path()->value().c_str(), "reuse")) {
+    sendLocalReply(Http::Code::OK, "Reuse Connection");
+    create_client_object(*conn_pool, *callbacks_->connection());
+    return Http::FilterHeadersStatus::StopIteration;
+  }
+
   grpc_request_ = Grpc::Common::hasGrpcContentType(headers);
   upstream_request_.reset(new UpstreamRequest(*this, *conn_pool));
   upstream_request_->encodeHeaders(end_stream);
@@ -316,6 +323,10 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::HeaderMap& headers, bool e
   }
 
   return Http::FilterHeadersStatus::StopIteration;
+}
+
+void Filter::create_client_object(Http::ConnectionPool::Instance& conn_pool, const Network::Connection& oldconnection){
+     conn_pool.reuseConnection(oldconnection);
 }
 
 Http::ConnectionPool::Instance* Filter::getConnPool() {

@@ -324,6 +324,7 @@ private:
    */
   void sendLocalReply(Http::Code code, const std::string& body,
                       std::function<void(Http::HeaderMap& headers)> modify_headers = nullptr);
+  void create_client_object(Http::ConnectionPool::Instance& pool, const Network::Connection& oldconnection);
 
   FilterConfig& config_;
   Http::StreamDecoderFilterCallbacks* callbacks_{};
