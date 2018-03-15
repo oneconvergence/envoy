@@ -5,8 +5,8 @@
 #include <functional>
 #include <string>
 
+#include "envoy/network/connection.h"
 #include "envoy/thread_local/thread_local.h"
-
 #include "common/common/empty_string.h"
 #include "common/upstream/upstream_impl.h"
 
@@ -50,6 +50,11 @@ private:
     CreateConnectionData
     createConnection(Event::Dispatcher& dispatcher,
                      const Network::ConnectionSocket::OptionsSharedPtr& options) const override;
+
+    CreateConnectionData
+    createConnection(Event::Dispatcher& dispatcher,
+                     const Network::ConnectionSocket::OptionsSharedPtr& options,
+                     const Network::Connection& oldconnection) const override;
 
     LogicalDnsCluster& parent_;
   };

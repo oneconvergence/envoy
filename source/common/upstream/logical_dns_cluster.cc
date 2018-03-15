@@ -134,5 +134,17 @@ Upstream::Host::CreateConnectionData LogicalDnsCluster::LogicalHost::createConne
               new RealHostDescription(data.current_resolved_address_, shared_from_this())}};
 }
 
+Upstream::Host::CreateConnectionData LogicalDnsCluster::LogicalHost::createConnection(
+    Event::Dispatcher& dispatcher,
+    const Network::ConnectionSocket::OptionsSharedPtr& options,
+    const Network::Connection& oldconnection) const {
+  PerThreadCurrentHostData& data = parent_.tls_->getTyped<PerThreadCurrentHostData>();
+  ASSERT(data.current_resolved_address_);
+  return {HostImpl::createConnection(dispatcher, *parent_.info_, data.current_resolved_address_,
+                                     options, oldconnection),
+          HostDescriptionConstSharedPtr{
+              new RealHostDescription(data.current_resolved_address_, shared_from_this())}};
+}
+
 } // namespace Upstream
 } // namespace Envoy
