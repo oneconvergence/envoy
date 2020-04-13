@@ -1,0 +1,12 @@
+FROM envoyproxy/envoy-dev:latest
+
+RUN apt-get update && apt-get -q install -y \
+    curl
+
+ADD ./service1-example-com.crt /etc/service1-example-com.crt
+ADD ./service1-example-com.key /etc/service1-example-com.key
+
+ADD ./service2-example-com.crt /etc/service2-example-com.crt
+ADD ./service2-example-com.key /etc/service2-example-com.key
+
+CMD /usr/local/bin/envoy -c /etc/front-envoy.yaml --service-cluster front-proxy
