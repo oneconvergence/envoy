@@ -153,6 +153,14 @@ void WatchMap::onConfigUpdate(
     const absl::flat_hash_set<Watch*>& interested_in_r = watchesInterestedIn(r);
     for (const auto& interested_watch : interested_in_r) {
       *per_watch_removed[interested_watch].Add() = r;
+      // Allowed deletion of unsubscribed resource
+      auto entry = watch_interest_.find(r);
+      if (entry != watch_interest_.end()) {
+        entry->second.erase(interested_watch);
+        // Delete resource watch from watch_interest_
+        if (entry->second.empty())
+          watch_interest_.erase(entry);
+      }
     }
   }
 
@@ -211,6 +219,8 @@ WatchMap::findRemovals(const std::vector<std::string>& newly_removed_from_watch,
     if (entry->second.empty()) {
       watch_interest_.erase(entry);
       newly_removed_from_subscription.insert(name);
+      // to allow resource deletion, add resource watch back into watch_interest_
+      watch_interest_[name] = {watch};
     }
   }
   return newly_removed_from_subscription;

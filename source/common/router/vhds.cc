@@ -40,9 +40,11 @@ VhdsSubscription::VhdsSubscription(RouteConfigUpdatePtr& config_update_info,
                                   .config_source()
                                   .api_config_source()
                                   .api_type();
-  if (config_source != envoy::config::core::v3::ApiConfigSource::DELTA_GRPC) {
+  // Commenting following check in-order to allow vhds subscription over ADS.
+  // TODO (mahesh): Update config_source check which works both for ADS & xDS.
+  /*if (config_source != envoy::config::core::v3::ApiConfigSource::DELTA_GRPC) {
     throw EnvoyException("vhds: only 'DELTA_GRPC' is supported as an api_type.");
-  }
+  }*/
   const auto resource_name = getResourceName();
   subscription_ =
       factory_context.clusterManager().subscriptionFactory().subscriptionFromConfigSource(
