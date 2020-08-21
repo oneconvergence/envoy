@@ -1,0 +1,78 @@
+node:
+  id: node0
+  cluster: front-proxy
+
+admin:
+  access_log_path: /tmp/admin_access.log
+  address:
+    socket_address: { address: 0.0.0.0, port_value: 8001 }
+
+dynamic_resources:
+  lds_config:
+# From ADS
+    ads: {}
+# From xDS
+#    api_config_source:
+#      api_type: GRPC
+#      transport_api_version: V3
+#      grpc_services:
+#        envoy_grpc:
+#          cluster_name: xds_cluster
+    resource_api_version: V3
+# A one place ADS configuration.
+  ads_config:
+    api_type: DELTA_GRPC
+    transport_api_version: V3
+    grpc_services:
+      envoy_grpc:
+        cluster_name: xds_cluster
+
+static_resources:
+  clusters:
+  - name: service1
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    http2_protocol_options: {}
+    load_assignment:
+      cluster_name: service1
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: service1
+                port_value: 80
+# Used for any one of xDS/ADS server.
+  - name: xds_cluster
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    http2_protocol_options: {}
+# Override the default circuit breaking settings to handle load >1024
+#    circuit_breakers:
+#      thresholds:
+#      - max_connections: 10000
+#        max_pending_requests: 1024
+#        max_requests: 10000
+    load_assignment:
+      cluster_name: xds_cluster
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: grpc_server
+                port_value: 50051
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+        common_tls_context:
+          tls_certificates:
+          - certificate_chain:
+              filename: /etc/certs/client.crt
+            private_key:
+              filename: /etc/certs/client.key
+          alpn_protocols:
+          - h2

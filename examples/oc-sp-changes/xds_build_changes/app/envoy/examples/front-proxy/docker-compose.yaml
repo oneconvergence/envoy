@@ -1,0 +1,73 @@
+version: "3"
+services:
+
+  front-envoy:
+    build:
+      context: .
+      dockerfile: Dockerfile-frontenvoy
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_PTRACE
+    volumes:
+      - ./front-envoy.yaml:/etc/front-envoy.yaml:z
+      - ./certs:/etc/certs:z
+      # mount envoy-bin path if willing to use compiled envoy binary as
+      # - /home/mkurund/envoy-sp/test/envoy_vhds_bins:/home/envoy-bin:z
+    networks:
+      - envoymesh
+    expose:
+      - "80"
+      - "4443"
+    ports:
+      # to expose listener with port 80
+      - "80:80"
+      # to expose admin console
+      - "8001:8001"
+      # to expose listener with port 443
+      - "443:443"
+
+  service:
+    build:
+      context: .
+      dockerfile: Dockerfile-service
+    volumes:
+      - ./service-envoy.yaml:/etc/service-envoy.yaml:z
+    networks:
+      envoymesh:
+        aliases:
+          - service
+    environment:
+      - SERVICE_NAME=1
+    expose:
+      - "80"
+
+  # XDS server
+  grpc_server:
+    build:
+      context: .
+      dockerfile: Dockerfile-grpcserver
+    #image: frontproxysnisds_grpc_server:latest
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_PTRACE
+    volumes:
+#     following config is for ads_server
+#     make sure you change this to point to your ads_server/xds_server binaries path at ~/bazel/
+      - /home/mkurund/bazel/_bazel_root/4f0cf7b2e596a03c9c669bf4f5b8e8db/execroot/__main__/bazel-out/k8-opt/bin/app/ads_server:/opt/ads_server:z
+#     cert files for TLS session between envoy and xds/ads server
+      - ./certs/server.key:/opt/ads_server/server.key:z
+      - ./certs/server.crt:/opt/ads_server/server.crt:z
+      - ./certs/client.crt:/opt/ads_server/client.crt:z
+#     xds configuration directory 
+      - ./xds:/opt/ads_server/xds:z
+    networks:
+      envoymesh:
+        aliases:
+          - grpc_server
+    expose:
+      - "50051"
+
+networks:
+  envoymesh: {}

@@ -1,0 +1,87 @@
+filegroup(
+    name = "headers",
+    srcs = glob(["include/openssl/*.h",
+                 "include/internal/*.h", ]) +
+           [ "ssl/packet_locl.h", 
+             "ssl/ssl_locl.h", 
+             "ssl/record/record.h",
+             "ssl/statem/statem.h",
+             "crypto/evp/evp_locl.h",
+             "crypto/include/internal/evp_int.h",
+             "e_os.h",
+           ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "openssl-headers",
+    hdrs = [ ":headers", "include/openssl/opensslconf.h"],
+    includes = ["include", "ssl", ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "crypto",
+    hdrs = [ ":headers", "include/openssl/opensslconf.h"],
+    srcs = ["libcrypto.a"],
+    includes = ["include"],
+    linkopts = ["-lpthread", "-ldl"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "ssl",
+    deps = [":crypto"],
+    hdrs = [ ":headers", "include/openssl/opensslconf.h"],
+    srcs = ["libssl.a"],
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+)
+
+# Need to seperate the config as seperate target as nitrox api has circular dependency and 
+# won't build without the opensslconf.h but openssl won't build without the nitrox lib
+genrule(
+    name = "openssl-config",
+    srcs = glob(["**/*"], exclude=["bazel-*", ".git*", ".travis*"]),
+    outs = ["include/openssl/opensslconf.h"],
+    visibility = ["//visibility:public"],
+    cmd = """
+        OPENSSL_ROOT=$$(dirname $(location config))
+        pushd $$OPENSSL_ROOT 
+            ./config no-shared cav_crypto_offload cav_ssl_offload cav_epoll_support -DOPENSSL_NO_HEARTBEATS -DINLINE_CTX -DCAV_TLSEXT_SUPPORT
+            make include/openssl/opensslconf.h
+        popd
+        cp $$OPENSSL_ROOT/include/openssl/opensslconf.h $(location include/openssl/opensslconf.h)
+    """,
+)
+
+# Still need to run everything that's already run in openssl-config again because every target is build in it's own sandbox with external dependency inject into it
+genrule(
+    name = "openssl-build",
+    srcs = glob(["**/*"], exclude=["bazel-*", ".git*", ".travis*"]) + ["@nitrox_driver//:nitrox", "include/openssl/opensslconf.h"],
+    visibility = ["//visibility:public"],
+    outs = [
+        "libcrypto.a",
+        "libssl.a",
+#       "include/openssl/opensslconf.h",
+    ],
+    cmd = """
+        OPENSSL_ROOT=$$(dirname $(location config))
+        # Hack: I cannot find an easy way to get to the root directory of a dependency repo inside genrule. So, use a bunch of .. here for now to get out of the sandbox
+        CAVIUM_INCLUDE=$$(realpath ../../../../../external/nitrox_driver/include)
+        # Figure out where is the nitrox api lib
+        NITROX_BIN_DIR=$$(realpath $(BINDIR)/external/nitrox_driver/)
+        NITROX_LIB=""
+        for file in `ls -1 $${NITROX_BIN_DIR}/*.a`; do
+            NITROX_LIB+=$${file}
+        done
+
+        pushd $$OPENSSL_ROOT 
+            ./config no-shared cav_crypto_offload cav_ssl_offload cav_epoll_support --with-nitrox-lib=$${NITROX_LIB} -I$${CAVIUM_INCLUDE} -DOPENSSL_NO_HEARTBEATS -DINLINE_CTX -DCAV_TLSEXT_SUPPORT
+            make
+        popd
+        cp $$OPENSSL_ROOT/libcrypto.a $(location libcrypto.a)
+        cp $$OPENSSL_ROOT/libssl.a $(location libssl.a)
+#        cp $$OPENSSL_ROOT/include/openssl/opensslconf.h $(location include/openssl/opensslconf.h)
+    """,
+)

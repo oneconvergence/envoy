@@ -1,0 +1,124 @@
+'@type': type.googleapis.com/envoy.config.listener.v3.Listener
+address:
+  socket_address:
+    address: 0.0.0.0
+    port_value: 443
+filter_chains:
+- filter_chain_match:
+    server_names:
+    - service4.ocenvoy.com
+  filters:
+  - name: envoy.filters.network.http_connection_manager
+    typed_config:
+      '@type': type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+      codec_type: AUTO
+      http_filters:
+      - name: envoy.filters.http.router
+        typed_config: {}
+      route_config:
+        name: local_route
+        virtual_hosts:
+        - domains:
+          - service4.ocenvoy.com
+          name: backend
+          routes:
+          - match:
+              prefix: /service/1
+            route:
+              cluster: service1
+      stat_prefix: ingress_http
+  transport_socket:
+    name: envoy.transport_sockets.tls
+    typed_config:
+      '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+      common_tls_context:
+        tls_certificate_sds_secret_configs:
+        - name: service4.ocenvoy.com
+          sds_config:
+            api_config_source:
+              api_type: DELTA_GRPC
+              grpc_services:
+                envoy_grpc:
+                  cluster_name: xds_cluster
+              transport_api_version: V3
+            resource_api_version: V3
+- filter_chain_match:
+    server_names:
+    - service2.ocenvoy.com
+  filters:
+  - name: envoy.filters.network.http_connection_manager
+    typed_config:
+      '@type': type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+      codec_type: AUTO
+      http_filters:
+      - name: envoy.filters.http.router
+        typed_config: {}
+      route_config:
+        name: local_route130
+        virtual_hosts:
+        - domains:
+          - service2.ocenvoy.com
+          name: backend
+          routes:
+          - match:
+              prefix: /service/1
+            route:
+              cluster: service1
+      stat_prefix: ingress_http
+  transport_socket:
+    name: envoy.transport_sockets.tls
+    typed_config:
+      '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+      common_tls_context:
+        tls_certificate_sds_secret_configs:
+        - name: service2.ocenvoy.com
+          sds_config:
+            api_config_source:
+              api_type: DELTA_GRPC
+              grpc_services:
+                envoy_grpc:
+                  cluster_name: xds_cluster
+              transport_api_version: V3
+            resource_api_version: V3
+- filter_chain_match:
+    server_names:
+    - service3.ocenvoy.com
+  filters:
+  - name: envoy.filters.network.http_connection_manager
+    typed_config:
+      '@type': type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+      codec_type: AUTO
+      http_filters:
+      - name: envoy.filters.http.router
+        typed_config: {}
+      route_config:
+        name: local_route
+        virtual_hosts:
+        - domains:
+          - service3.ocenvoy.com
+          name: backend
+          routes:
+          - match:
+              prefix: /service/1
+            route:
+              cluster: service1
+      stat_prefix: ingress_http
+  transport_socket:
+    name: envoy.transport_sockets.tls
+    typed_config:
+      '@type': type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+      common_tls_context:
+        tls_certificate_sds_secret_configs:
+        - name: service3.ocenvoy.com
+          sds_config:
+            api_config_source:
+              api_type: DELTA_GRPC
+              grpc_services:
+                envoy_grpc:
+                  cluster_name: xds_cluster
+              transport_api_version: V3
+            resource_api_version: V3
+listener_filters:
+- name: envoy.filters.listener.tls_inspector
+  typed_config: {}
+name: listener1

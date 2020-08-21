@@ -1,0 +1,39 @@
+filegroup(
+    name = "headers",
+    srcs = glob(["include/**/*.h", ]),
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "jsoncpp",
+    hdrs = [ ":headers", ],
+    srcs = [ "libjsoncpp.a" ],
+    deps = [
+    ],
+    includes = [ "include" ],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "jsoncpp-build",
+    visibility = ["//visibility:public"],
+    srcs = glob(["**/*"]) +
+        [
+            "@cmake//:cmake-build",
+        ],
+    outs = [ "libjsoncpp.a",
+        ],
+    cmd = """
+        ROOT=$$(dirname $(location CMakeLists.txt))
+        CMAKE=$$(realpath "bazel-out/k8-fastbuild/genfiles/external/cmake/bin/cmake")
+        INSTALL_DIR=$$(realpath $(@D))
+        pushd $$ROOT
+        mkdir build
+        cd build
+        echo "$$CMAKE -DCMAKE_BUILD_TYPE=release -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF -DARCHIVE_INSTALL_DIR=$$INSTALL_DIR -G \"Unix Makefiles\" .." > /tmp/jsoncpp.build
+        $$CMAKE -DCMAKE_BUILD_TYPE=release -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF -DARCHIVE_INSTALL_DIR=$$INSTALL_DIR -G "Unix Makefiles" ..
+        make
+        cp src/lib_json/libjsoncpp.a $$INSTALL_DIR
+        popd
+    """,
+) 

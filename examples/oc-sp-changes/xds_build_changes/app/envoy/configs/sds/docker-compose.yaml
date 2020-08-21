@@ -1,0 +1,55 @@
+version: "3"
+services:
+
+  front-envoy:
+    build:
+      context: .
+      dockerfile: Dockerfile-frontenvoy
+    volumes:
+      - ./front-envoy.yaml:/etc/front-envoy.yaml:z
+      - ./certs:/etc/certs:z
+    networks:
+      - envoymesh
+    expose:
+      - "80"
+      - "8001"
+      - "443"
+    ports:
+      - "8000:80"
+      - "8001:8001"
+      - "443:443"
+
+  service1:
+    build:
+      context: .
+      dockerfile: Dockerfile-service
+    volumes:
+      - ./service-envoy.yaml:/etc/service-envoy.yaml:z
+    networks:
+      envoymesh:
+        aliases:
+          - service1
+    environment:
+      - SERVICE_NAME=1
+    expose:
+      - "80"
+
+  grpc_server:
+    build:
+      context: .
+      dockerfile: Dockerfile-GRPC_Server
+    volumes:
+#     make sure you change this to point to your xds_server binaries path at ~/bazel/
+#      - /home/ckesava/bazel/_bazel_root/4f0cf7b2e596a03c9c669bf4f5b8e8db/execroot/__main__/bazel-out/k8-opt/bin/app/xds_server:/opt/xds_server:z
+#     make sure you change this to point to your certs location
+#      - /home/ckesava/Rp/OC_Envoy_Research/envoy/examples/front-proxy-sni-filebased-dynamic/certs:/opt/xds_server/secret:z
+    networks:
+      envoymesh:
+        aliases:
+          - grpc_server
+    expose:
+      - "50051"
+
+
+networks:
+  envoymesh: {}

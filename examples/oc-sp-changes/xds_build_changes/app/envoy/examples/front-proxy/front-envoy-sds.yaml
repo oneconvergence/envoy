@@ -1,0 +1,101 @@
+static_resources:
+  listeners:
+  - address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 443
+    access_log:
+    - name: envoy.access_loggers.file
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
+        path: "/tmp/listener_access.log"
+    listener_filters:
+    - name: envoy.filters.listener.tls_inspector
+      typed_config: {}
+    filter_chains:
+    - filter_chain_match:
+        server_names: ["service1.ocenvoy.com"]
+      filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          codec_type: AUTO
+          stat_prefix: ingress_http
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: backend
+              domains:
+              - "service1.ocenvoy.com"
+              routes:
+              - match:
+                  prefix: "/service/1"
+                route:
+                  cluster: service1
+          http_filters:
+          - name: envoy.filters.http.router
+            typed_config: {}
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+          common_tls_context:
+            tls_certificate_sds_secret_configs:
+            - name: service1.ocenvoy.com
+              sds_config:
+                api_config_source:
+                  api_type: GRPC
+                  transport_api_version: V3
+                  grpc_services:
+                    envoy_grpc:
+                      cluster_name: sds_server_mtls
+  clusters:
+  - name: service1
+    connect_timeout: 0.25s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    http2_protocol_options: {}
+    load_assignment:
+      cluster_name: service1
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: service1-mk
+                port_value: 80
+  - name: sds_server_mtls
+    connect_timeout: 0.25s
+    http2_protocol_options: {}
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: sds_server_mtls
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: grpc_server-mk
+                port_value: 50051
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+        common_tls_context:
+          tls_certificates:
+          - certificate_chain:
+              filename: /etc/certs/client.crt
+            private_key:
+              filename: /etc/certs/client.key
+          alpn_protocols:
+          - h2
+admin:
+  access_log_path: "/tmp/access.logs"
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 8001
+node:
+  cluster: mycluster
+  id: mkid

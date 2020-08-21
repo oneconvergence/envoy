@@ -1,0 +1,19 @@
+# Listeners and Secrets are dynamically updated based on the following configured load.
+# The Listeners and Secrets are updated in mutually exclusive ways,
+# like no parallel secret and listener are being updated.
+# Also the secrets updates are paused until the updated listener moves to an active state.
+# initial_load: String; The initial listener config to choose.
+# Example: '1k' means - Listener with 1k filterchains corresponding to 1k independent domains.
+
+initial_load: 1k
+
+# listener_updates: Sequence of strings; Listener config to choose for update at each hour.
+#                  After the sequence is exhausted, automation will restart the sequence.
+listener_updates:
+- 2k
+- 3k
+- 4k
+- 5k
+
+# secrets_updates: Integer; Number of randomly chosen secrets that has to be dynamically updated per second.
+secrets_updates: 10

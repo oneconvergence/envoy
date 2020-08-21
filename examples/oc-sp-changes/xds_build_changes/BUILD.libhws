@@ -1,0 +1,87 @@
+filegroup(
+    name = "headers",
+    srcs = glob(["lib/**/*.[Hh]"]),
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "hws",
+    hdrs = [ ":headers", ],
+    srcs = ["libhws.a"],
+    includes = ["common/lib"],
+    linkopts = ["-lpthread",],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "libhws-build",
+    srcs = glob(["**/*"], exclude=["bazel-*", ".git*", ".travis*"]) +
+        [
+            "@nitrox_driver//:nitrox-headers",
+            "@openssl//:openssl-config",
+            "@openssl//:headers",
+#            "@mysql//:mysql-client",
+            "@curl//:headers",
+            "@mysql//:headers",
+            "@mysql//:mysql-client-build",
+            "@gperftools//:gperftools-build",
+        ],
+    cmd = """
+        # include path for the generated opensslconf.h
+        INCLUDE_FLAGS+="-I$$(realpath $$(dirname $$(dirname $(location @openssl//:openssl-config))))"
+        declare -A uniq_dirs 		# declare an empty array and use the index to collect the uniq directories
+        # include paths for all the static openssl headers 
+        for header in $(locations @openssl//:headers); do
+            case $$header in 
+                */e_os.h) uniq_dirs["$$(dirname $$header)"]=1;;         # this header is at the root level, so only strip the filename
+                *) uniq_dirs["$$(dirname $$(dirname $$header))"]=1;;	# strip out the openssl/xxx.h or ssl/xxx.h from the header filename; that's why calling dirname twice
+            esac
+        done
+        # include paths for all the static nitrox headers 
+        for header in $(locations @nitrox_driver//:nitrox-headers); do
+            uniq_dirs["$$(dirname $$header)"]=1
+        done
+        
+        # add mysql include path
+        uniq_dirs["./external/mysql/include"]=1
+
+        for header in $(locations @mysql//:mysql-client-build); do
+            case $$header in 
+                *.h) uniq_dirs["$$(dirname $$header)"]=1;;
+            esac
+        done
+
+        # add curl include path
+        uniq_dirs["./external/curl/include"]=1
+
+        for dir in $${!uniq_dirs[@]}; do	# iterate over the array keys using '!'
+            INCLUDE_FLAGS+=" -I$$(realpath $$dir)"
+        done
+
+        for lib in $(locations @gperftools//:gperftools-build); do
+            case $$lib in 
+                *.a) GPERFTOOLS_LIB_DIR="$$(realpath $$(dirname $$lib))"; break ;;
+            esac
+        done
+        BASE_DIR=$$(dirname $(location Makefile))
+        pushd $$BASE_DIR
+        export ENABLE_NATIVE_SSL=1
+        export SYSLOGODOMETER=1
+        export USE_SYSTEM_ZLIB=1
+        BUILD_DIR="build/CentOS.release.x86_64"
+        mkdir -p $$BUILD_DIR
+        pushd $$BUILD_DIR 
+        HW_HEADERS_DIR=$$(realpath ./)/headers
+        INCLUDE_FLAGS+=" -I$$HW_HEADERS_DIR"
+
+        ln -fs ../../common/Makefile
+        echo "GPERFTOOLS_DIR=$$GPERFTOOLS_LIB_DIR CPPSTD=--std=c++17 CPPFLAGS=$$INCLUDE_FLAGS make" >> /tmp/libhws.out
+        GPERFTOOLS_DIR=$$GPERFTOOLS_LIB_DIR CPPSTD=--std=c++17 CPPFLAGS=$$INCLUDE_FLAGS make
+        popd
+        popd
+        cp $$BASE_DIR/$$BUILD_DIR/lib/libhws.a $(location libhws.a)
+    """,
+    outs = [
+        "libhws.a",
+    ],
+)

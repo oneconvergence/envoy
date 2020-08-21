@@ -1,0 +1,49 @@
+filegroup(
+    name = "headers",
+    srcs = glob(["src/google/*.h", "src/gperftools/*.h"]),
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "gperftools",
+    hdrs = [ ":headers", ],
+    srcs = [ "libprofiler.a",
+             "libtcmalloc.a",
+             "libtcmalloc_debug.a",
+             "libtcmalloc_minimal.a",
+             "libtcmalloc_minimal_debug.a",
+             "libtcmalloc_and_profiler.a",
+        ],
+    includes = [ "include" ],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "gperftools-build",
+    visibility = ["//visibility:public"],
+    srcs = glob(["**/*"]),
+    outs = [ "libprofiler.a",
+             "libtcmalloc.a",
+             "libtcmalloc_debug.a",
+             "libtcmalloc_minimal.a",
+             "libtcmalloc_minimal_debug.a",
+             "libtcmalloc_and_profiler.a",
+             "bin/pprof",
+        ],
+    cmd = """
+        ROOT=$$(dirname $(location autogen.sh))
+        pushd $$ROOT
+        ./autogen.sh
+        mkdir build
+        ./configure --prefix=$$(realpath ./build)
+        make
+        popd
+        cp $$ROOT/src/pprof $(location bin/pprof)
+        cp $$ROOT/.libs/libprofiler.a $(location libprofiler.a)
+        cp $$ROOT/.libs/libtcmalloc.a $(location libtcmalloc.a)
+        cp $$ROOT/.libs/libtcmalloc_debug.a $(location libtcmalloc_debug.a)
+        cp $$ROOT/.libs/libtcmalloc_minimal.a $(location libtcmalloc_minimal.a)
+        cp $$ROOT/.libs/libtcmalloc_minimal_debug.a $(location libtcmalloc_minimal_debug.a)
+        cp $$ROOT/.libs/libtcmalloc_and_profiler.a $(location libtcmalloc_and_profiler.a)
+    """,
+) 

@@ -1,0 +1,16 @@
+# rds ssl
+version_info: "0"
+resources:
+- "@type": type.googleapis.com/envoy.config.route.v3.RouteConfiguration
+  name: local_ssl_route
+  virtual_hosts:
+  - name: domain0
+    domains: ["service0.ocenvoy.com"]
+    routes:
+    - match: { prefix: "/service/1" }
+      route: { cluster: service1 }
+  vhds:
+    config_source:
+      ads: {}
+      resource_api_version: V3
+  validate_clusters: true

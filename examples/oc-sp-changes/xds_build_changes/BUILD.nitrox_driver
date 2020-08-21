@@ -1,0 +1,25 @@
+# nitrox headers
+filegroup(
+    name = "nitrox-headers",
+    srcs = glob([
+        "include/*",
+        "include/linux/*",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "nitrox",
+    srcs = glob([
+        "api/*.c",
+    ]),
+    hdrs = [
+        ":nitrox-headers",
+    ],
+    deps = [
+        "@openssl//:openssl-headers",
+    ],
+    includes = [ "include" ],
+    visibility = ["//visibility:public"],
+)
+

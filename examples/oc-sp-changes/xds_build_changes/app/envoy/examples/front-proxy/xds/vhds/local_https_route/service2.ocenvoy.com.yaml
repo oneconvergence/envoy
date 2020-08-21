@@ -1,0 +1,8 @@
+name: https_service2
+domains:
+- service2.ocenvoy.com
+routes:
+- match:
+    prefix: "/service/1"
+  route:
+    cluster: service1

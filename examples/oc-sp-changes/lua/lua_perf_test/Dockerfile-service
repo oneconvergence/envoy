@@ -1,0 +1,11 @@
+#FROM envoyproxy/envoy-alpine-dev:latest
+FROM envoyproxy/envoy-alpine-dev:3504d40f752eb5c20bc2883053547717bcb92fd8
+
+RUN apk update && apk add python3 bash curl
+RUN pip3 install -q Flask==0.11.1 requests==2.18.4
+RUN mkdir /code
+ADD ./service.py /code
+ADD ./test.bin /code
+ADD ./start_service.sh /usr/local/bin/start_service.sh
+RUN chmod u+x /usr/local/bin/start_service.sh
+ENTRYPOINT /usr/local/bin/start_service.sh

@@ -1,0 +1,79 @@
+#!/bin/bash
+
+docker_check_status () {
+    vm_status=`docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Status}}" --filter "name=$vm_name" $1 | grep -v STATUS | awk '{ print $3 }'`
+}
+
+docker_get_id () {
+    vm_container_id=`docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Status}}" --filter "name=$vm_name" $1 | grep -v STATUS | awk '{ print $1 }'`
+}
+
+docker_stop () {
+    docker_check_status
+    if [ "$vm_status" == "Up" ];
+    then
+    	docker_get_id 
+        echo "Stopping container $vm_container_id"
+        docker kill $vm_container_id
+    else
+        echo "vm is not running"
+    fi
+}
+
+centos_version=81
+vm_name=centos${centos_version}_dev_1
+
+
+if [ "$1" == "stop" ];
+then
+    docker_stop
+    exit 0
+elif [ "$1" == "destroy" ];
+then
+    docker_stop
+    docker_get_id -a 
+    echo "Removing container $vm_container_id"
+    docker rm $vm_container_id
+    exit 0
+fi
+
+docker_check_status -a
+echo $vm_status
+if [ "$vm_status" == "" ];
+then
+#    cd ~/Projects/cdn-all/devvm/docker/centos${centos_version}
+    echo "Starting vm ..."
+    docker-compose up --build &
+    for i in {1..5}
+    do
+        echo "checking vm status $i ..."
+        docker_check_status
+        echo $vm_status
+        if [ "$vm_status" != "" ];
+        then
+            break;
+        fi
+        sleep 1
+    done
+fi
+
+if [ "$vm_status" == "Exited" ];
+then
+    echo "Attaching to $vm_name"
+    docker_get_id -a
+    echo "docker start -a $vm_container_id &"
+    docker start -a $vm_container_id &
+    sleep 1
+fi
+
+docker_check_status
+docker_get_id
+
+if [ "$vm_status" == "Up" ];
+then
+    echo "Starting bash in container $vm_container_id"
+    docker exec -it $vm_container_id bash
+    exit 0
+fi
+
+echo "Error: vm failed to start"

@@ -1,0 +1,142 @@
+new_local_repository(
+    name = "bento4",
+    build_file = "BUILD.bento4",
+    path = "third_party/bento4/vendor/github.com/axiomatic-systems/Bento4",
+)
+
+new_local_repository(
+    name = "lmdb",
+    build_file = "BUILD.lmdb",
+    path = "third_party/lmdb/libraries/liblmdb",
+)
+
+new_local_repository(
+    name = "nitrox_driver",
+    build_file = "BUILD.nitrox_driver",
+    path = "third_party/nitrox-driver/src",
+)
+
+new_local_repository(
+    name = "openssl",
+    build_file = "BUILD.openssl",
+    path = "third_party/openssl",
+)
+
+local_repository(
+    name = "libhws",
+#    build_file = "BUILD.libhws",
+    path = "lib/libhws/common/lib",
+)
+
+new_local_repository(
+    name = "cmake",
+    build_file = "BUILD.cmake",
+    path = "build_tools/cmake",
+)
+
+new_local_repository(
+    name = "mysql",
+    build_file = "BUILD.mysql",
+    path = "third_party/mysql-server",
+)
+
+new_local_repository(
+    name = "curl",
+    build_file = "BUILD.curl",
+    path = "third_party/curl",
+)
+
+new_local_repository(
+    name = "jsoncpp",
+    build_file = "BUILD.jsoncpp",
+    path = "third_party/jsoncpp",
+)
+
+# commented out for now because this conflicts with grpc's dependency. TODO: looks like we can uncomment this here and grpc would use this instead by involving @zlib
+#new_local_repository(
+#    name = "zlib",
+#    build_file = "BUILD.zlib",
+#    path = "third_party/zlib",
+#)
+
+new_local_repository(
+    name = "gperftools",
+    build_file = "BUILD.gperftools",
+    path = "third_party/gperftools",
+)
+
+# commented out for now because this conflicts with grpc's dependency. TODO: looks like we can uncomment this here and grpc would use this instead by involving @com_google_protobuf
+#local_repository(
+#    name = "com_google_protobuf",
+#    path = "third_party/protobuf",
+#)
+
+local_repository(
+    name = "libhwscdn",
+    path = "lib/libhwscdn/src/lib",
+)
+
+local_repository(
+    name = "custconf",
+    path = "lib/custconf/src",
+)
+
+local_repository(
+    name = "hwprotobufs",
+    path = "lib/hwprotobufs/src",
+)
+
+local_repository(
+    name = "re2",
+    path = "third_party/re2",
+)
+
+local_repository(
+    name = "gtest",
+    path = "third_party/googletest",
+)
+
+local_repository(
+    name = "com_github_nelhage_rules_boost",
+    path = "build_tools/rules_boost",
+)
+
+# commented out for now because we don't need this yet and the boost_rules submodules are not setup yet. TODO: add the boost rule using the new submodule mechanism
+#load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
+#boost_deps()
+
+# setup grpc for developing grpc application
+# WARNING: I think this is not needed if we include envoy as including this before envoy 
+#          caused envoy build to fail because this fetch an old copy of envoy's data-plane-api
+#          Leaving it here just for reference if we want to develop grpc app without envoy
+# local_repository(
+#     name = "com_github_grpc_grpc",
+#     path = "third_party/grpc",
+# )
+# load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+# grpc_deps()
+
+# setup envoy for developing filters and xds servers
+local_repository(
+    name = "envoy",
+    path = "third_party/envoy",
+)
+
+# copy from third_party/envoy/WORKSPACE (with the added @envoy prefix). Might need to update the following from time to time when pulling new version of envoy
+load("@envoy//bazel:api_binding.bzl", "envoy_api_binding")
+
+envoy_api_binding()
+
+load("@envoy//bazel:api_repositories.bzl", "envoy_api_dependencies")
+
+envoy_api_dependencies()
+
+load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
+
+envoy_dependencies()
+
+load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
+
+envoy_dependency_imports(go_version = "host")
+# end copy from third_party/envoy/WORKSPACE
+

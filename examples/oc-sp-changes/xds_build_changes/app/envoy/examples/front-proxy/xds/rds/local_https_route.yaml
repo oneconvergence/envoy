@@ -1,0 +1,13 @@
+name: local_https_route
+virtual_hosts:
+- name: https_service0
+  domains:
+  - service0.ocenvoy.com
+  routes:
+  - match: { prefix: /service/1 }
+    route: { cluster: service1 }
+vhds:
+  config_source:
+    ads: {}
+    resource_api_version: V3
+validate_clusters: true

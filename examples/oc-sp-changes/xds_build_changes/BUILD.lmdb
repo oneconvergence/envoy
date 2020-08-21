@@ -1,0 +1,26 @@
+cc_library(
+    name = "lmdb",
+    hdrs = [ "lmdb.h", ],
+    srcs = [ "liblmdb.a" ],
+    deps = [
+    ],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "lmdb-build",
+    visibility = ["//visibility:public"],
+    srcs = glob(["**/*"]) +
+        [
+        ],
+    outs = [ "liblmdb.a",
+        ],
+    cmd = """
+        ROOT=$$(dirname $(location Makefile))
+        INSTALL_DIR=$$(realpath $(@D))
+        pushd $$ROOT
+        make liblmdb.a
+        cp liblmdb.a $$INSTALL_DIR
+        popd
+    """,
+) 

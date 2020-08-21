@@ -1,0 +1,51 @@
+version: "3"
+services:
+
+  front-envoy-mk:
+    build:
+      context: .
+      dockerfile: Dockerfile-frontenvoy
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_PTRACE
+    volumes:
+      - ./conf_files:/home/conf_files:z
+    networks:
+      - envoymesh
+    expose:
+      - "80"
+    ports:
+      # to expose listener with port 80
+      - "80:80"
+      # to expose admin console
+      - "8001:8001"
+
+  servicemk1:
+    build:
+      context: .
+      dockerfile: Dockerfile-service
+    volumes:
+      - ./service-envoy.yaml:/etc/service-envoy.yaml:z
+    networks:
+      envoymesh:
+        aliases:
+          - servicemk1
+    environment:
+      - SERVICE_NAME=1
+    expose:
+      - "80"
+
+  wrk:
+    build:
+      context: .
+      dockerfile: Dockerfile-wrk
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_PTRACE
+    networks:
+      - envoymesh
+
+networks:
+  envoymesh: {}

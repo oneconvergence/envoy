@@ -1,0 +1,9 @@
+# The xDS/ADS server loads this configuration and serve it to Envoy
+name: service1
+domains:
+- "service1.ocenvoy.com"
+routes:
+- match:
+    prefix: "/service/1"
+  route:
+    cluster: service1

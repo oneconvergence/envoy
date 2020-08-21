@@ -1,0 +1,7 @@
+FROM grpc/cxx:1.10
+
+RUN apt-get update && apt-get -q install -y \
+    vim
+
+WORKDIR /opt/xds_server
+CMD ./xds_server

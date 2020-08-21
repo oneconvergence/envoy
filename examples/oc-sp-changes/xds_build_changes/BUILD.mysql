@@ -1,0 +1,51 @@
+#-DWITH_ZLIB=system -DWITH_SSL=/path
+#-DINSTALL_LIBDIR
+#-DINSTALL_BINDIR
+#-DINSTALL_INCLUDEDIR
+#-DWITH_CURL
+#-DWITH_AWS_SDK
+
+filegroup(
+    name = "headers",
+    srcs = glob(["include/**/*.h", ]),
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "mysql-client",
+    hdrs = [ ":headers",
+             "mysql_version.h",
+             "binary_log_funcs.h",
+             "binary_log_types.h", ],
+    srcs = [ "libmysqlclient.so", "libmysqlclient.a" ],
+    includes = [ "include", ],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "mysql-client-build",
+    visibility = ["//visibility:public"],
+    srcs = glob(["**/*"]) + ["@cmake//:cmake-build",],
+    outs = [ "libmysqlclient.so",
+             "libmysqlclient.a",
+             "mysql_version.h",
+             "binary_log_funcs.h",
+             "binary_log_types.h", ],
+    cmd = """
+        ROOT=$$(dirname $(location CMakeLists.txt))
+        CMAKE=$$(realpath "bazel-out/k8-fastbuild/genfiles/external/cmake/bin/cmake")
+        BOOST_DIR=$$(dirname $$(realpath $(location CMakeLists.txt)))/../boost
+        pushd $$ROOT
+        mkdir build
+        pushd build
+        $$CMAKE -DWITH_BOOST=$$BOOST_DIR ../
+        make -C libmysql
+        popd
+        popd
+        cp $$ROOT/build/libmysql/libmysqlclient.so $(location libmysqlclient.so)
+        cp $$ROOT/build/archive_output_directory/libmysqlclient.a $(location libmysqlclient.a)
+        cp $$ROOT/build/include/mysql_version.h $(location mysql_version.h)
+        cp $$ROOT/libbinlogevents/export/binary_log_types.h $(location binary_log_types.h)
+        cp $$ROOT/libbinlogevents/export/binary_log_funcs.h $(location binary_log_funcs.h)
+    """,
+) 

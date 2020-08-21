@@ -1,0 +1,8 @@
+host scm001.wp1.hwcdn.net
+	user jenkins
+	IdentityFile ~/.ssh/id_rsa.jenkins
+	StrictHostKeyChecking no
+host dist001.qa.hwcdn.net
+	user rpmdrop
+	IdentityFile ~/.ssh/id_rsa.jenkins
+	StrictHostKeyChecking no

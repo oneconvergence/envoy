@@ -1,0 +1,16 @@
+version: '3'
+services:
+  dev:
+    build: .
+    command: "/usr/sbin/sshd -D"
+    volumes:
+#     make sure you change this to point to your home directory
+#      - /home/afong/oc-bitbucket:/usr/local/oc-bitbucket:z
+#      - /home/afong/bazel:/root/.cache/bazel:z
+    ports:
+#     make sure you change the host port to something not used by others
+#      - "2222:22"
+    cap_add:
+      - SYS_ADMIN
+    stdin_open: true
+    tty: true

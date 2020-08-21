@@ -1,0 +1,52 @@
+filegroup(
+    name = "headers",
+    srcs = glob(["include/**/*.h", ]),
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "curl",
+    hdrs = [ ":headers", ],
+    srcs = [ "libcurl.a" ],
+    deps = [
+        "@openssl//:openssl-headers",
+        "@zlib//:zlib",
+    ],
+    includes = [ "include" ],
+#    include_prefix = "curl",
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "curl-build",
+    visibility = ["//visibility:public"],
+    srcs = glob(["**/*"]) +
+        [
+            "@cmake//:cmake-build",
+            "@openssl//:openssl-config",
+            "@openssl//:openssl-build",
+            "@openssl//:ssl",
+            "@openssl//:headers",
+        ],
+    outs = [ "libcurl.a",
+        ],
+    cmd = """
+        ROOT=$$(dirname $(location CMakeLists.txt))
+        CMAKE=$$(realpath "bazel-out/k8-fastbuild/genfiles/external/cmake/bin/cmake")
+        echo "$$PWD" > /tmp/curl.out
+        OPENSSL_CONFIG_INC_DIR=$$(realpath "bazel-out/k8-fastbuild/genfiles/external/openssl/include")
+        OPENSSL_ROOT_DIR=$$(realpath "external/openssl")
+        OPENSSL_INC_DIR=$$OPENSSL_ROOT_DIR/include
+        OPENSSL_SSL_LIB=$$(realpath "bazel-out/k8-fastbuild/genfiles/external/openssl/libssl.a")
+        OPENSSL_CRYPTO_LIB=$$(realpath "bazel-out/k8-fastbuild/genfiles/external/openssl/libcrypto.a")
+        echo "$$OPENSSL_ROOT_DIR" > /tmp/curl.out
+        pushd $$ROOT
+        ./buildconf
+        mkdir build
+        echo "CPPFLAGS=\"-I$$OPENSSL_INC_DIR -I$$OPENSSL_CONFIG_INC_DIR\" LIBS=\"-ldl -lpthread\" PKG_CONFIG_PATH=$$OPENSSL_ROOT_DIR LDFLAGS=\"-L$$OPENSSL_ROOT_DIR\" ./configure --with-ssl --with-libssl-prefix=$$OPENSSL_ROOT_DIR --disable-shared --prefix=$$(realpath ./build)" >> /tmp/curl.out
+        CPPFLAGS="-I$$OPENSSL_INC_DIR -I$$OPENSSL_CONFIG_INC_DIR" LIBS="-ldl -lpthread" PKG_CONFIG_PATH=$$OPENSSL_ROOT_DIR LDFLAGS="-L$$OPENSSL_ROOT_DIR" ./configure --with-ssl --with-libssl-prefix=$$OPENSSL_ROOT_DIR --disable-shared
+        make
+        popd
+        cp $$ROOT/lib/.libs/libcurl.a $(location libcurl.a)
+    """,
+) 

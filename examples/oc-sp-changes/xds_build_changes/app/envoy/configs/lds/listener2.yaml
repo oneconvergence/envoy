@@ -1,0 +1,64 @@
+# The xDS/ADS server loads this configuration and serve it to Envoy
+
+name: listener2
+address:
+  socket_address:
+    address: 0.0.0.0
+    port_value: 443
+access_log:
+- name: envoy.access_loggers.file
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
+    path: "/tmp/listener_access.log"
+listener_filters:
+- name: envoy.filters.listener.tls_inspector
+  typed_config: {}
+filter_chains:
+- filter_chain_match:
+    server_names: ["service1.ocenvoy.com"]
+  filters:
+  - name: envoy.filters.network.http_connection_manager
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+      codec_type: AUTO
+      stat_prefix: ingress_http
+      rds:
+        config_source:
+          path: "/etc/rds_ssl.yaml"
+        route_config_name: local_ssl_route 
+      http_filters:
+      - name: envoy.filters.http.on_demand
+        typed_config: {}
+      - name: envoy.filters.http.router
+        typed_config: {}
+  transport_socket:
+    name: envoy.transport_sockets.tls
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+      common_tls_context:
+        tls_certificate_sds_secret_configs:
+        - name: service1.ocenvoy.com
+          sds_config:
+# From ADS, See front-envoy.yaml for the cluster name.
+            ads: {}
+# From xDS
+#            api_config_source:
+#              api_type: GRPC
+#              transport_api_version: V3
+#              grpc_services:
+#                envoy_grpc:
+#                  cluster_name: xds_cluster
+            resource_api_version: V3
+        validation_context_sds_secret_config:
+          name: trusted_ca
+          sds_config:
+# From ADS, See front-envoy.yaml for the cluster name.
+            ads: {}
+# From xDS
+#            api_config_source:
+#              api_type: DELTA_GRPC
+#              transport_api_version: V3
+#              grpc_services:
+#                envoy_grpc:
+#                  cluster_name: xds_cluster
+            resource_api_version: V3
