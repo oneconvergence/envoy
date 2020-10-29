@@ -14,7 +14,7 @@ to the [envoy docs](https://www.envoyproxy.io/docs/envoy/latest/start/sandboxes/
 ```
 2. Build ADS binary using following command from root of this repo i.e envoy_research and update docker-compose.yaml (volume section) to mount it in grpc-server.
 ```
-      $ bazel build --verbose_failures --sandbox_debug -s -c opt -copt="-g" //app/xds_server:xds_server
+      $ bazel build --verbose_failures --sandbox_debug -s -c opt --copt="-g" //app/ads_server:ads_server
 ```
 
 3. Spawn the Docker chain
