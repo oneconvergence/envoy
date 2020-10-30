@@ -4,7 +4,7 @@ to the [envoy docs](https://www.envoyproxy.io/docs/envoy/latest/start/sandboxes/
 ---
 
 ## To test this sandbox, follow these steps -
-1. Generate certs for sds by using following commands and copy them into xds/sds directory as. Copy generator.py in xds directory from [generator_script](https://bitbucket.org/stackpath/envoy_research/src/sni_based_tls_cert_test/app/sni_based_tls_cert_test/generator.py) and run it as:
+1. Generate certs for sds by using following commands and copy them into xds/sds directory as. Copy generator.py in xds directory from [generator_script](https://github.com/oneconvergence/envoy/blob/sp-changes/examples/oc-sp-changes/xds_build_changes/app/sni_based_tls_cert_test/generator.py) and run it as:
 ```
       $ cd xds
       # copy generator.py here and run it as below to generate 50k certs
@@ -12,9 +12,9 @@ to the [envoy docs](https://www.envoyproxy.io/docs/envoy/latest/start/sandboxes/
       $ mv certs/* sds/.
       $ mv listener50k.yaml lds/.
 ```
-2. Build ADS binary using following command from root of this repo i.e envoy_research and update docker-compose.yaml to mount it in grpc-server.
+2. Build ADS binary using following command from root of this repo i.e envoy_research and update docker-compose.yaml (volume section) to mount it in grpc-server.
 ```
-      $ bazel build --verbose_failures --sandbox_debug -s -c opt -copt="-g" //app/xds_server:xds_server
+      $ bazel build --verbose_failures --sandbox_debug -s -c opt --copt="-g" //app/ads_server:ads_server
 ```
 
 3. Spawn the Docker chain
