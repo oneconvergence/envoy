@@ -139,7 +139,12 @@ public:
     rebuilt_filter_chain_ = nullptr;
   }
 
-  void startDraining() override { factory_context_->startDraining(); }
+  void startDraining() override {
+    if (is_placeholder_ && !has_rebuilt_filter_chain_ && factory_context_ == nullptr) {
+      return;
+    }
+    factory_context_->startDraining();
+  }
 
   void setFilterChainFactoryContext(
       Configuration::FilterChainFactoryContextPtr filter_chain_factory_context) {
