@@ -352,8 +352,13 @@ public:
 
   Upstream::ClusterManager& cluster_manager_;
 
+  // Adds filesystem watchers for LUA paths such as /usr/local/share/lua/5.1/
+  void addLuaPathWatchers(Server::Configuration::FactoryContext& context);
+
 private:
   absl::flat_hash_map<std::string, PerLuaCodeSetupPtr> per_lua_code_setups_map_;
+  std::unique_ptr<Filesystem::Watcher> watcher_;
+  const envoy::extensions::filters::http::lua::v3::Lua proto_config_;
 };
 
 using FilterConfigConstSharedPtr = std::shared_ptr<FilterConfig>;

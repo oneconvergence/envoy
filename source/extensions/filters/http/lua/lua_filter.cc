@@ -626,10 +626,30 @@ int StreamHandleWrapper::luaBase64Escape(lua_State* state) {
   return 1;
 }
 
+void FilterConfig::addLuaPathWatchers(Server::Configuration::FactoryContext& context) {
+  // hardcoding path for the moment
+  std::string path = "/usr/local/share/lua/5.1/lib/";
+  watcher_ = context.dispatcher().createFilesystemWatcher();
+  watcher_->addWatch(path,
+      Filesystem::Watcher::Events::MovedTo |
+      Filesystem::Watcher::Events::Modified,
+      [path, &context, this](uint32_t) {
+        ENVOY_LOG(debug, "LUA path: {} is updated. Updating PerLuaCodeSetup", path);
+        if (per_lua_code_setups_map_[GLOBAL_SCRIPT_NAME]) {
+          auto global_setup_ptr = std::make_unique<PerLuaCodeSetup>(
+              proto_config_.inline_code(), context.threadLocal());
+          if (global_setup_ptr) {
+            per_lua_code_setups_map_[GLOBAL_SCRIPT_NAME].reset();
+            per_lua_code_setups_map_[GLOBAL_SCRIPT_NAME] = std::move(global_setup_ptr);
+          }
+        }
+  });
+}
+
 FilterConfig::FilterConfig(const envoy::extensions::filters::http::lua::v3::Lua& proto_config,
                            ThreadLocal::SlotAllocator& tls,
                            Upstream::ClusterManager& cluster_manager, Api::Api& api)
-    : cluster_manager_(cluster_manager) {
+    : cluster_manager_(cluster_manager), proto_config_(proto_config) {
   auto global_setup_ptr = std::make_unique<PerLuaCodeSetup>(proto_config.inline_code(), tls);
   if (global_setup_ptr) {
     per_lua_code_setups_map_[GLOBAL_SCRIPT_NAME] = std::move(global_setup_ptr);
