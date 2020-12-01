@@ -16,6 +16,10 @@ Http::FilterFactoryCb LuaFilterConfig::createFilterFactoryFromProtoTyped(
     Server::Configuration::FactoryContext& context) {
   FilterConfigConstSharedPtr filter_config(new FilterConfig{
       proto_config, context.threadLocal(), context.clusterManager(), context.api()});
+
+  // Setting up a watcher for LUA_PATHs
+  filter_config->addLuaPathWatchers(context);
+
   return [filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
     callbacks.addStreamFilter(std::make_shared<Filter>(filter_config));
   };

@@ -626,6 +626,19 @@ int StreamHandleWrapper::luaBase64Escape(lua_State* state) {
   return 1;
 }
 
+void FilterConfig::addLuaPathWatchers(Server::Configuration::FactoryContext& context) {
+  // hardcoding path for the moment
+  std::string path = "/usr/local/share/lua/5.1/";
+  watcher_ = context.dispatcher().createFilesystemWatcher();
+  watcher_->addWatch(path,
+      Filesystem::Watcher::Events::MovedTo |
+      Filesystem::Watcher::Events::Modified,
+      [path](uint32_t) {
+    ENVOY_LOG(debug, "LUA path: {} is being watched", path);
+    //TODO: Update this callback to perform PerLuaCodeSetup update
+  });
+}
+
 FilterConfig::FilterConfig(const envoy::extensions::filters::http::lua::v3::Lua& proto_config,
                            ThreadLocal::SlotAllocator& tls,
                            Upstream::ClusterManager& cluster_manager, Api::Api& api)
