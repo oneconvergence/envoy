@@ -358,6 +358,7 @@ public:
 private:
   absl::flat_hash_map<std::string, PerLuaCodeSetupPtr> per_lua_code_setups_map_;
   std::unique_ptr<Filesystem::Watcher> watcher_;
+  const envoy::extensions::filters::http::lua::v3::Lua proto_config_;
 };
 
 using FilterConfigConstSharedPtr = std::shared_ptr<FilterConfig>;
